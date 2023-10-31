@@ -23,27 +23,37 @@ else
 	# If we're not debugging the Makefile, don't output environment variables to the file
 endif
 
-# Go version used as the image of the build container, grabbed from go.mod
-GO_VERSION       := $(shell grep -E '^go [[:digit:]]{1,3}\.[[:digit:]]{1,3}$$' go.mod | sed 's/go //')
-# Local Go release version (only supports go1.16 and later)
-LOCAL_GO_VERSION := $(shell go env GOVERSION 2>/dev/null | grep -oE "go[[:digit:]]{1,3}\.[[:digit:]]{1,3}" || echo "none")
-
-# Warn if local go release version is different from what is specified in go.mod.
-ifneq (none, $(LOCAL_GO_VERSION))
-  ifneq (go$(GO_VERSION), $(LOCAL_GO_VERSION))
-    $(warning Your local Go release ($(LOCAL_GO_VERSION)) is different from the one that this go module assumes (go$(GO_VERSION)).)
-  endif
-endif
-
-# It's necessary to set this because some environments don't link sh -> bash.
-SHELL := /usr/bin/env bash -o errexit -o pipefail -o nounset
-
-# If use setup environment file
+# If output setup environment file
 ENV_FILE ?= y
-$(shell $(shell pwd)/build/setup_env.sh ${ENV_FILE} > build/.setup.env)
-include build/.setup.env
 
-# Export the environment variables you provide 
--include ./build/.env
+#-----------------------------------------------------------------------------
+# Default target
+#-----------------------------------------------------------------------------
 
-include Makefile.core.mk
+default: help
+
+help: # @HELP (default) print this message
+help:
+	echo -e "${RED_COLOR}VARIABLES:${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} BINS ${NO_COLOR} = ${GREEN_COLOR} $(TARGET_BASE_NAME) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} OS ${NO_COLOR} = ${GREEN_COLOR} $(OS) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} ARCH ${NO_COLOR} = ${GREEN_COLOR} $(ARCH) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} DBG ${NO_COLOR} = ${GREEN_COLOR} $(DBG) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} GOFLAGS ${NO_COLOR} = ${GREEN_COLOR} $(GOFLAGS) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} REGISTRY ${NO_COLOR} = ${GREEN_COLOR} $(REGISTRY) ${NO_COLOR}"
+	echo -e " ${BLUE_COLOR} VERSION ${NO_COLOR} = ${GREEN_COLOR} $(VERSION) ${NO_COLOR}"
+	echo
+	echo -e "${RED_COLOR}MAKE_TARGETS:${NO_COLOR}"
+	grep -E '^.*: *# *@HELP' $(MAKEFILE_LIST)    \
+	    | sed -E 's/.*.mk://g'                   \
+	    | awk '                                  \
+	        BEGIN {FS = ": *# *@HELP"};          \
+	        { printf " \033[36m%-15s\033[0m \033[0;32m%s\033[0m\n", $$1, $$2 };' \
+
+#-----------------------------------------------------------------------------
+# Include makefile
+#-----------------------------------------------------------------------------
+
+include make/common.mk
+include make/golang.mk
+include make/image.mk
