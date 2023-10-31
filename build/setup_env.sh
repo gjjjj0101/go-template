@@ -14,19 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
 VARS=(
       TARGET_OS
       TARGET_ARCH
+      REPO_ROOT
+      VERSION
 )
 
 SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+REPO_ROOT=$(dirname "${SCRIPT_DIR}")
 LOCAL_ARCH=$(uname -m)
 TARGET_ARCH=
 TARGET_OS=
+VERSION=
 
 # Pass environment set target architecture to build system
 if [[ ${TARGET_ARCH} ]]; then
@@ -57,15 +57,17 @@ LOCAL_OS=$(uname)
 if [[ ${TARGET_OS} ]]; then
     # Target explicitly set
     :
-elif [[ $LOCAL_OS == Linux ]]; then
+elif [[ ${LOCAL_OS} == Linux ]]; then
     TARGET_OS=linux
-elif [[ $LOCAL_OS == Darwin ]]; then
+elif [[ ${LOCAL_OS} == Darwin ]]; then
     TARGET_OS=darwin
 else
-    echo "This system's OS, $LOCAL_OS, isn't supported"
+    echo "This system's OS, ${LOCAL_OS}, isn't supported"
     exit 1
 fi
-export x=1
+
+
+
 
 if [[ "${1}" == "y" ]]; then
   for var in "${VARS[@]}"; do
